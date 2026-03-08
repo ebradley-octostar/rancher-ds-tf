@@ -1,0 +1,145 @@
+Terraform Provider for Rancher v2
+==================================
+
+[![Go Report Card](https://goreportcard.com/badge/github.com/terraform-providers/terraform-provider-rancher2)](https://goreportcard.com/report/github.com/terraform-providers/terraform-provider-rancher2)
+
+Requirements
+------------
+
+- [Terraform](https://www.terraform.io/downloads.html) >= 1.5.0
+- [Go](https://golang.org/doc/install) 1.23 to build the provider plugin
+
+Building The Provider
+---------------------
+
+Clone repository to: `$GOPATH/src/github.com/terraform-providers/terraform-provider-rancher2`
+
+```sh
+$ mkdir -p $GOPATH/src/github.com/terraform-providers; cd $GOPATH/src/github.com/terraform-providers
+$ git clone git@github.com:terraform-providers/terraform-provider-rancher2
+```
+
+Enter the provider directory and build the provider
+
+```sh
+$ cd $GOPATH/src/github.com/terraform-providers/terraform-provider-rancher2
+$ make build
+```
+
+Using the Provider
+----------------------
+
+If you're building the provider, follow the instructions to [install it as a plugin.](https://www.terraform.io/docs/plugins/basics.html#installing-a-plugin) After placing it into your plugins directory,  run `terraform init` to initialize it. Documentation about the provider specific configuration options can be found on the [provider's website](https://www.terraform.io/docs/providers/rancher2/index.html).
+
+Developing the Provider
+---------------------------
+
+If you wish to work on the provider, you'll first need [Go](http://www.golang.org) installed on your machine (version 1.20+ is *required*). A Nix flake is also available in the repo which is used to generate an environment for build and test.
+
+To compile the provider, run `make build`. This will build the provider and put the provider binary in a bin directory where the repo was cloned.
+
+```sh
+$ make build
+...
+$ $GOPATH/bin/terraform-provider-rancher2
+...
+```
+
+There are a few full implementation examples in the "examples" directory, these are run by the CI using the "run_tests.sh" script.
+The run_tests script will build and run the examples to test.
+WARNING! These are real implementations, you will need AWS credentials in your environment and there will be a cost associated.
+The following example runs a single implementation, the most basic one:
+
+```sh
+./run_tests.sh -t TestOneBasic
+```
+
+See [development process](docs/development-process.md) for more details.
+
+Testing the Provider
+---------------------------
+
+To run unit tests run `make test`, the unit tests are currently non-functional.
+
+```sh
+$ make test
+```
+
+To run acceptance tests, use the `run_tests.sh` script.
+WARNING! These are real implementations, you will need AWS credentials in your environment and there will be a cost associated.
+The following example runs a every acceptance test, one at a time.
+
+```sh
+./run_tests.sh -s
+```
+
+See [test process](docs/test-process.md) for details on release testing (_Terraform Maintainers Only_).
+
+Branching the Provider
+---------------------------
+
+This provider is branched in correlation with minor versions of Rancher:
+* the `release/v7` branch with v7.0.0+ is aligned with Rancher 2.11
+* the `release/v8` branch with v8.0.0+ is aligned with Rancher 2.12
+* the `release/v13` branch with v13.0.0+ is aligned with Rancher 2.13
+
+We no longer release from the main branch, this allows us to test integration early and often.
+
+The lifecycle of each major provider version is aligned with the lifecycle of each Rancher minor version.
+For example, provider versions 4.x are aligned with Rancher 2.8.x will only be actively maintained until the EOM for Rancher 2.8.x and supported until EOL for Rancher 2.8.x.
+
+See the [Rancher support matrix](https://www.suse.com/lifecycle/#rancher) for details.
+
+Aligning major provider releases with minor Rancher releases means:
+
+* We can follow semver
+* We can cut patch/minor versions on an as-needed basis to fix bugs or add new resources
+* We have 'out of band' flexibility and are only tied to releasing a new version of the provider when we get a new 2.x Rancher minor version.
+
+See the [compatibility matrix](docs/compatibility-matrix.md) for details.
+
+Releasing the Provider
+---------------------------
+
+As of v2.0.0 and v3.0.0, the provider is tied to Rancher minor releases but can be released 'out of band' within that minor version.
+As of v13.0.0, the provider's major number aligns with Rancher's minor number.
+For example, v13.0.0 will be released 1-2 weeks after Rancher 2.13.x and fixes and features in the v13.0.0 release will be supported for clusters provisioned via Terraform on Rancher 2.13.x.
+A critical bug fix can be released immediately as a patch release. For instance, as v13.0.1
+
+
+To release the provider:
+
+Version 13+
+
+* Make sure that all backport issues are approved by QA teams and closed, they should be assigned to the related milestone.
+* Find the release PR generated by release-please.
+* Make sure the e2e tests pass, the link should be in the PR.
+* Approve the PR and merge the changelog.
+
+Version 7 & 8
+
+* Make sure that all backport issues are approved by QA teams and closed, they should be assigned to the related milestone.
+* Run e2e tests manually and verify that they work properly.
+* Use the `Manually Create RC Release` workflow to manually trigger the release process.
+
+Making sure the release automation works:
+
+1. Create a PR with the proper release branches specified by the labels, add the labels before creating the PR.
+2. When a PR is created a tracking issue will be generated automatically for it, if the PR has the proper labels they will be automatically added to the tracking issue.
+3. If the PR was created without the proper labels, add them to the tracking issue.
+4. Adding the labels to the tracking issue will generate "backport" issues used to track the PR's release.
+5. The labels should be added before the PR is merged to main.
+6. If the labels and issues are generated properly, when the PR merges to main, backport PRs will be generated automatically.
+7. If the backport PRs weren't generated, you can generate them manually using the `Manually Cherry-Pick to Release Branches` workflow.
+8. When the backport PRs merge into their respective release branch an RC release should be generated automatically.
+9. If an RC wasn't generated you can create one manually using the `Manually Create RC Release` workflow.
+10. When a release is generated all open backport PRs should get a comment with a link to the new release.
+11. For version 13+ there should be a "release PR" generated by release-please, review and merge this to finalize the release.
+12. The release workflow will generate a release when the "release PR" merges.
+
+Updating Release Version
+
+* Each new release version will require a change to the release-please config's "release-as:" attribute.
+* Make sure to update the 'release-please-config.json' file at the root of the repository when adding a new version.
+* Once release/v14 is created this will mean that PRs will need to be made directly to the release/v13 branch to update the version there.
+* Main should have the version from the last created release branch.
